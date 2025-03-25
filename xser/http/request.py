@@ -1,8 +1,20 @@
 # coding:utf-8
 
+from queue import Queue
 from typing import Dict
 from typing import List
 from typing import Optional
+from io import BytesIO
+
+
+class RequestHandler:
+    CHUNK_SIZE: int = 1048576  # 1MB
+
+    def __init__(self):
+        self.__buffer: BytesIO = BytesIO()
+
+    def buffer(self) -> BytesIO:
+        return self.__buffer
 
 
 class RequestHeader():
