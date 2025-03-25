@@ -5,8 +5,12 @@ from socket import socket
 
 from xkits import ThreadPool
 
+from xser.http.request import RequestHeader
+
 
 class SockProxy():
+    CHUNK_SIZE: int = 1048576  # 1MB
+
     def __init__(self, server_socket: socket, client_socket: socket):
         self.__server_socket: socket = server_socket
         self.__client_socket: socket = client_socket
@@ -28,10 +32,14 @@ class SockProxy():
         self.server_socket.close()
 
     def client_handler(self):
+        data: bytes = self.client_socket.recv(RequestHeader.MAX_HEADER)
+        RequestHeader.parse(data)
+        print(f"send {len(data)} to server")
+        self.server_socket.sendall(data)
         while (data := self.client_socket.recv(1048576)):
             print(f"send {len(data)} to server")
             self.server_socket.sendall(data)
-            # print(data)
+            print(data)
         print("send to server end")
         self.client_socket.close()
 
