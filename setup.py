@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from urllib.parse import urljoin
+
 from setuptools import find_packages
 from setuptools import setup
 
@@ -7,11 +9,12 @@ from xser.attribute import __author__
 from xser.attribute import __author_email__
 from xser.attribute import __description__
 from xser.attribute import __project__
-from xser.attribute import __urlbugs__
-from xser.attribute import __urlcode__
-from xser.attribute import __urldocs__
 from xser.attribute import __urlhome__
 from xser.attribute import __version__
+
+__urlcode__ = __urlhome__
+__urldocs__ = __urlhome__
+__urlbugs__ = urljoin(__urlhome__, "issues")
 
 
 def all_requirements():

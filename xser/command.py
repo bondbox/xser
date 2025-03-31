@@ -15,12 +15,12 @@ from xser.attribute import __version__
 
 
 @CommandArgument(__project__, description=__description__)
-def add_cmd(_arg: ArgParser):
+def add_cmd(_arg: ArgParser):  # pylint: disable=unused-argument
     pass
 
 
 @CommandExecutor(add_cmd)
-def run_cmd(cmds: Command) -> int:
+def run_cmd(cmds: Command) -> int:  # pylint: disable=unused-argument
     return 0
 
 
