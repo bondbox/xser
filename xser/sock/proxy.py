@@ -3,7 +3,7 @@
 from socket import create_connection
 from socket import socket
 
-from xkits import ThreadPool
+from xkits_thread.executor import ThreadPool
 
 
 class SockProxy():
