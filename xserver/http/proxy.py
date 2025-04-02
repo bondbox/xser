@@ -121,6 +121,7 @@ class HttpProxy(BaseHTTPRequestHandler):
         for chunk in rp.generator:
             self.wfile.write(chunk)
             self.wfile.flush()
+        rp.response.close()
 
     def do_GET(self):
         headers = self.request_proxy.filter_headers(
