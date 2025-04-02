@@ -36,18 +36,21 @@ class ResponseProxy():
         self.__response: Response = response
 
     @property
-    def response(self) -> Response:
-        return self.__response
+    def status_code(self) -> int:
+        return self.__response.status_code
 
     @property
     def headers(self) -> Dict[str, str]:
-        return {k: v for k, v in self.response.headers.items()
+        return {k: v for k, v in self.__response.headers.items()
                 if k.lower() not in self.EXCLUDED_HEADERS}
 
     @property
     def generator(self):
-        for chunk in self.response.iter_content(chunk_size=self.CHUNK_SIZE):
+        for chunk in self.__response.iter_content(chunk_size=self.CHUNK_SIZE):
             yield chunk
+
+    def close(self):
+        self.__response.close()
 
 
 class RequestProxy():
@@ -114,14 +117,14 @@ class HttpProxy(BaseHTTPRequestHandler):
         return self.rfile.read(content_length) if content_length > 0 else None
 
     def forward(self, rp: ResponseProxy):
-        self.send_response(rp.response.status_code)
+        self.send_response(rp.status_code)
         for header, value in rp.headers.items():
             self.send_header(header, value)
         self.end_headers()
         for chunk in rp.generator:
             self.wfile.write(chunk)
             self.wfile.flush()
-        rp.response.close()
+        rp.close()
 
     def do_GET(self):
         headers = self.request_proxy.filter_headers(

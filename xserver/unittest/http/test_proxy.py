@@ -38,6 +38,10 @@ class TestResponseProxy(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_status_code(self):
+        self.fake_response.status_code = 404
+        self.assertEqual(self.response.status_code, 404)
+
     def test_headers(self):
         self.fake_response.headers = {"Content-Length": "0"}
         self.assertEqual(self.response.headers, {})
@@ -46,6 +50,9 @@ class TestResponseProxy(unittest.TestCase):
         self.fake_response.iter_content.side_effect = [["test"]]
         for chunk in self.response.generator:
             self.assertEqual(chunk, "test")
+
+    def test_close(self):
+        self.assertIsNone(self.response.close())
 
 
 class TestRequestProxy(unittest.TestCase):
@@ -87,7 +94,7 @@ class TestHttpProxy(unittest.TestCase):
         cls.thread = Thread(target=cls.fake_proxy.run)
         cls.thread.start()
         fake_response = mock.MagicMock()
-        fake_response.response.status_code = 200
+        fake_response.status_code = 200
         fake_response.headers = {
             "Accept-Ranges": "bytes",
             "Content-Type": "text/html",
