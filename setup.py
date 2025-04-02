@@ -5,12 +5,12 @@ from urllib.parse import urljoin
 from setuptools import find_packages
 from setuptools import setup
 
-from xser.attribute import __author__
-from xser.attribute import __author_email__
-from xser.attribute import __description__
-from xser.attribute import __project__
-from xser.attribute import __urlhome__
-from xser.attribute import __version__
+from xserver.attribute import __author__
+from xserver.attribute import __author_email__
+from xserver.attribute import __description__
+from xserver.attribute import __project__
+from xserver.attribute import __urlhome__
+from xserver.attribute import __version__
 
 __urlcode__ = __urlhome__
 __urldocs__ = __urlhome__
@@ -36,5 +36,5 @@ setup(
     project_urls={"Source Code": __urlcode__,
                   "Bug Tracker": __urlbugs__,
                   "Documentation": __urldocs__},
-    packages=find_packages(include=["xser*"], exclude=["xser.unittest"]),
+    packages=find_packages(include=["xserver*"], exclude=["xserver.unittest"]),
     install_requires=all_requirements())

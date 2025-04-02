@@ -1,7 +1,7 @@
 [run]
 omit =
-    xser/unittest/*
-    xser/attribute.py
+    xserver/unittest/*
+    xserver/attribute.py
 
 [report]
 exclude_lines =

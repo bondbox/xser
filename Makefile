@@ -1,6 +1,6 @@
 MAKEFLAGS += --always-make
 
-VERSION := $(shell python3 -c "from xser.attribute import __version__; print(__version__)")
+VERSION := $(shell python3 -c "from xserver.attribute import __version__; print(__version__)")
 
 all: build reinstall test
 
@@ -39,12 +39,12 @@ reinstall: uninstall install
 test-prepare:
 	pip3 install --upgrade mock pylint flake8 pytest pytest-cov
 pylint:
-	pylint $(shell git ls-files xser/*.py)
+	pylint $(shell git ls-files xserver/*.py)
 flake8:
-	flake8 xser --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 xser --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+	flake8 xserver --count --select=E9,F63,F7,F82 --show-source --statistics
+	flake8 xserver --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 pytest:
-	pytest --cov=xser --cov-report=term-missing --cov-report=xml --cov-report=html --cov-config=.coveragerc --cov-fail-under=100
+	pytest --cov=xserver --cov-report=term-missing --cov-report=xml --cov-report=html --cov-config=.coveragerc --cov-fail-under=100
 pytest-clean:
 	rm -rf .pytest_cache
 test: test-prepare pylint flake8 pytest
