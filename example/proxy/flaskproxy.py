@@ -19,8 +19,8 @@ class FlaskProxy(RequestProxy):
 
     @classmethod
     def forward(cls, rp: ResponseProxy) -> Response:
-        response = Response(stream_with_context(rp.generator), rp.response.status_code, rp.headers)  # noqa:E501
-        for cookie in rp.response.cookies:
+        response = Response(stream_with_context(rp.generator), rp.status_code, rp.headers)  # noqa:E501
+        for cookie in rp.cookies:
             response.set_cookie(
                 key=cookie.name,
                 value=cookie.value or "",

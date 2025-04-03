@@ -46,6 +46,10 @@ class TestResponseProxy(unittest.TestCase):
         self.fake_response.headers = {"Content-Length": "0"}
         self.assertEqual(self.response.headers, {})
 
+    def test_cookies(self):
+        self.fake_response.cookies = ["test=unit"]
+        self.assertEqual(self.response.cookies, ["test=unit"])
+
     def test_generator(self):
         self.fake_response.iter_content.side_effect = [["test"]]
         for chunk in self.response.generator:

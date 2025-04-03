@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 from requests import Response
 from requests import get  # noqa:H306
 from requests import post
+from requests.cookies import RequestsCookieJar
 
 
 class ProxyError(Exception):
@@ -43,6 +44,10 @@ class ResponseProxy():
     def headers(self) -> Dict[str, str]:
         return {k: v for k, v in self.__response.headers.items()
                 if k.lower() not in self.EXCLUDED_HEADERS}
+
+    @property
+    def cookies(self) -> RequestsCookieJar:
+        return self.__response.cookies
 
     @property
     def generator(self):
