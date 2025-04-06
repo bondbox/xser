@@ -10,6 +10,7 @@ from requests import Response
 from requests import get  # noqa:H306
 from requests import post
 from requests.cookies import RequestsCookieJar
+from xhtml.header.headers import Headers
 
 
 class ProxyError(Exception):
@@ -27,10 +28,10 @@ class ResponseProxy():
     CHUNK_SIZE: int = 1048576  # 1MB
 
     EXCLUDED_HEADERS = [
-        "connection",
-        "content-encoding",
-        "content-length",
-        "transfer-encoding",
+        Headers.CONNECTION.value,
+        Headers.CONTENT_ENCODING.value,
+        Headers.CONTENT_LENGTH.value,
+        Headers.TRANSFER_ENCODING.value,
     ]
 
     def __init__(self, response: Response) -> None:
@@ -42,8 +43,7 @@ class ResponseProxy():
 
     @property
     def headers(self) -> Dict[str, str]:
-        return {k: v for k, v in self.__response.headers.items()
-                if k.lower() not in self.EXCLUDED_HEADERS}
+        return {k: v for k, v in self.__response.headers.items() if k not in self.EXCLUDED_HEADERS}  # noqa:E501
 
     @property
     def cookies(self) -> RequestsCookieJar:
@@ -62,13 +62,13 @@ class RequestProxy():
     """API Request Proxy"""
 
     EXCLUDED_HEADERS = [
-        "connection",
-        "content-length",
-        "host",
-        "keep-alive",
-        "proxy-authorization",
-        "transfer-encoding",
-        "via",
+        Headers.CONNECTION.value,
+        Headers.CONTENT_LENGTH.value,
+        Headers.HOST.value,
+        Headers.KEEP_ALIVE.value,
+        Headers.PROXY_AUTHORIZATION.value,
+        Headers.TRANSFER_ENCODING.value,
+        Headers.VIA.value,
     ]
 
     def __init__(self, target_url: str) -> None:
@@ -83,7 +83,7 @@ class RequestProxy():
 
     @classmethod
     def filter_headers(cls, headers: MutableMapping[str, str]) -> Dict[str, str]:  # noqa:E501
-        return {k: v for k, v in headers.items() if k.lower() not in cls.EXCLUDED_HEADERS}  # noqa:E501
+        return {k: v for k, v in headers.items() if k not in cls.EXCLUDED_HEADERS}  # noqa:E501
 
     def request(self, path: str, method: str, data: Optional[bytes] = None,
                 headers: Optional[MutableMapping[str, str]] = None
