@@ -32,26 +32,46 @@ class TestResponseProxy(unittest.TestCase):
         pass
 
     def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_generator(self):
+        for chunk in proxy.ResponseProxy(status_code=200, headers={}).generator:  # noqa:E501
+            self.assertEqual(chunk, b"")
+
+    def test_close(self):
+        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers={}).close())  # noqa:E501
+
+
+class TestRequestProxyResponse(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def setUp(self):
         self.fake_response = mock.MagicMock()
-        self.response = proxy.ResponseProxy(self.fake_response)
+        self.fake_response.status_code = 404
+        self.fake_response.headers = {"Content-Length": "0"}
+        self.fake_response.iter_content.side_effect = [["test"]]
+        self.response = proxy.RequestProxyResponse(self.fake_response)
 
     def tearDown(self):
         pass
 
     def test_status_code(self):
-        self.fake_response.status_code = 404
         self.assertEqual(self.response.status_code, 404)
 
     def test_headers(self):
-        self.fake_response.headers = {"Content-Length": "0"}
         self.assertEqual(self.response.headers, {})
 
-    def test_cookies(self):
-        self.fake_response.cookies = ["test=unit"]
-        self.assertEqual(self.response.cookies, ["test=unit"])
-
     def test_generator(self):
-        self.fake_response.iter_content.side_effect = [["test"]]
         for chunk in self.response.generator:
             self.assertEqual(chunk, "test")
 

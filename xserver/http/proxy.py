@@ -1,7 +1,9 @@
 # coding:utf-8
 
 from http.server import BaseHTTPRequestHandler
+from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import MutableMapping
 from typing import Optional
 from urllib.parse import urljoin
@@ -9,7 +11,6 @@ from urllib.parse import urljoin
 from requests import Response
 from requests import get  # noqa:H306
 from requests import post
-from requests.cookies import RequestsCookieJar
 from xhtml.header.headers import Headers
 
 
@@ -27,6 +28,29 @@ class ResponseProxy():
     """API Response Proxy"""
     CHUNK_SIZE: int = 1048576  # 1MB
 
+    def __init__(self, status_code: int, headers: Dict[str, str]) -> None:
+        self.__status_code: int = status_code
+        self.__headers: Dict[str, str] = headers
+
+    @property
+    def status_code(self) -> int:
+        return self.__status_code
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        return self.__headers
+
+    @property
+    def generator(self) -> Generator[bytes, Any, None]:
+        yield b""
+
+    def close(self):
+        pass
+
+
+class RequestProxyResponse(ResponseProxy):
+    """API Request Proxy Response"""
+
     EXCLUDED_HEADERS = [
         Headers.CONNECTION.value,
         Headers.CONTENT_ENCODING.value,
@@ -35,19 +59,9 @@ class ResponseProxy():
     ]
 
     def __init__(self, response: Response) -> None:
+        headers = {k: v for k, v in response.headers.items() if k not in self.EXCLUDED_HEADERS}  # noqa:E501
+        super().__init__(status_code=response.status_code, headers=headers)
         self.__response: Response = response
-
-    @property
-    def status_code(self) -> int:
-        return self.__response.status_code
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        return {k: v for k, v in self.__response.headers.items() if k not in self.EXCLUDED_HEADERS}  # noqa:E501
-
-    @property
-    def cookies(self) -> RequestsCookieJar:
-        return self.__response.cookies
 
     @property
     def generator(self):
@@ -87,7 +101,7 @@ class RequestProxy():
 
     def request(self, path: str, method: str, data: Optional[bytes] = None,
                 headers: Optional[MutableMapping[str, str]] = None
-                ) -> ResponseProxy:
+                ) -> RequestProxyResponse:
         url: str = self.urljoin(path.lstrip("/"))
         if method == "GET":
             response = get(
@@ -96,7 +110,7 @@ class RequestProxy():
                 headers=headers,
                 stream=True
             )
-            return ResponseProxy(response)
+            return RequestProxyResponse(response)
         if method == "POST":
             response = post(
                 url=url,
@@ -104,7 +118,7 @@ class RequestProxy():
                 headers=headers,
                 stream=True
             )
-            return ResponseProxy(response)
+            return RequestProxyResponse(response)
         raise MethodNotAllowed()
 
 
