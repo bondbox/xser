@@ -4,8 +4,10 @@ from http.server import BaseHTTPRequestHandler
 from typing import Any
 from typing import Dict
 from typing import Generator
+from typing import List
 from typing import MutableMapping
 from typing import Optional
+from typing import Tuple
 from urllib.parse import urljoin
 
 from requests import Response
@@ -28,16 +30,16 @@ class ResponseProxy():
     """API Response Proxy"""
     CHUNK_SIZE: int = 1048576  # 1MB
 
-    def __init__(self, status_code: int, headers: Dict[str, str]) -> None:
+    def __init__(self, status_code: int, headers: List[Tuple[str, str]]) -> None:  # noqa:E501
         self.__status_code: int = status_code
-        self.__headers: Dict[str, str] = headers
+        self.__headers: List[Tuple[str, str]] = headers
 
     @property
     def status_code(self) -> int:
         return self.__status_code
 
     @property
-    def headers(self) -> Dict[str, str]:
+    def headers(self) -> List[Tuple[str, str]]:
         return self.__headers
 
     @property
@@ -47,9 +49,12 @@ class ResponseProxy():
     def close(self):
         pass
 
+    def set_cookie(self, keyword: str, value: str):
+        self.headers.append((Headers.SET_COOKIE.value, f"{keyword}={value}"))
+
     @classmethod
     def redirect(cls, status_code: int = 302, location: str = "/") -> "ResponseProxy":  # noqa:E501
-        headers: Dict[str, str] = {Headers.LOCATION.value: location}
+        headers: List[Tuple[str, str]] = [(Headers.LOCATION.value, location)]
         return ResponseProxy(status_code=status_code, headers=headers)
 
 
@@ -64,7 +69,7 @@ class RequestProxyResponse(ResponseProxy):
     ]
 
     def __init__(self, response: Response) -> None:
-        headers = {k: v for k, v in response.headers.items() if k not in self.EXCLUDED_HEADERS}  # noqa:E501
+        headers: List[Tuple[str, str]] = [i for i in response.headers.items() if i[0] not in self.EXCLUDED_HEADERS]  # noqa:E501
         super().__init__(status_code=response.status_code, headers=headers)
         self.__response: Response = response
 
@@ -142,8 +147,10 @@ class HttpProxy(BaseHTTPRequestHandler):
 
     def forward(self, rp: ResponseProxy):
         self.send_response(rp.status_code)
-        for header, value in rp.headers.items():
-            self.send_header(header, value)
+        for header in rp.headers:
+            k: str = header[0]
+            v: str = header[1]
+            self.send_header(k, v)
         self.end_headers()
         for chunk in rp.generator:
             self.wfile.write(chunk)

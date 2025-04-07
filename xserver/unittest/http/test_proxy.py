@@ -38,11 +38,14 @@ class TestResponseProxy(unittest.TestCase):
         pass
 
     def test_generator(self):
-        for chunk in proxy.ResponseProxy(status_code=200, headers={}).generator:  # noqa:E501
+        for chunk in proxy.ResponseProxy(status_code=200, headers=[]).generator:  # noqa:E501
             self.assertEqual(chunk, b"")
 
     def test_close(self):
-        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers={}).close())  # noqa:E501
+        self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=[]).close())  # noqa:E501
+
+    def test_set_cookie(self):
+        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers=[]).set_cookie("test", "unit"))  # noqa:E501
 
     def test_redirect(self):
         response = proxy.ResponseProxy.redirect()
@@ -74,7 +77,7 @@ class TestRequestProxyResponse(unittest.TestCase):
         self.assertEqual(self.response.status_code, 404)
 
     def test_headers(self):
-        self.assertEqual(self.response.headers, {})
+        self.assertEqual(self.response.headers, [])
 
     def test_generator(self):
         for chunk in self.response.generator:
