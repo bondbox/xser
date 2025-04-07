@@ -44,6 +44,11 @@ class TestResponseProxy(unittest.TestCase):
     def test_close(self):
         self.assertIsNone(proxy.ResponseProxy(status_code=404, headers={}).close())  # noqa:E501
 
+    def test_redirect(self):
+        response = proxy.ResponseProxy.redirect()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers, [("Location", "/")])
+
 
 class TestRequestProxyResponse(unittest.TestCase):
 

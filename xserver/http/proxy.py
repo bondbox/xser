@@ -47,6 +47,11 @@ class ResponseProxy():
     def close(self):
         pass
 
+    @classmethod
+    def redirect(cls, status_code: int = 302, location: str = "/") -> "ResponseProxy":  # noqa:E501
+        headers: Dict[str, str] = {Headers.LOCATION.value: location}
+        return ResponseProxy(status_code=status_code, headers=headers)
+
 
 class RequestProxyResponse(ResponseProxy):
     """API Request Proxy Response"""
