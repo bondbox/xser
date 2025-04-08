@@ -38,8 +38,10 @@ class TestResponseProxy(unittest.TestCase):
         pass
 
     def test_generator(self):
-        for chunk in proxy.ResponseProxy(status_code=200, headers=[]).generator:  # noqa:E501
-            self.assertEqual(chunk, b"")
+        response = proxy.ResponseProxy.make_ok_response(b"test")
+        self.assertEqual(response.status_code, 200)
+        for chunk in response.generator:
+            self.assertEqual(chunk, b"test")
 
     def test_close(self):
         self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=[]).close())  # noqa:E501

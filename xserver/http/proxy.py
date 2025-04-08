@@ -30,9 +30,11 @@ class ResponseProxy():
     """API Response Proxy"""
     CHUNK_SIZE: int = 1048576  # 1MB
 
-    def __init__(self, status_code: int, headers: List[Tuple[str, str]]) -> None:  # noqa:E501
+    def __init__(self, status_code: int, headers: List[Tuple[str, str]],
+                 datas: bytes = b"") -> None:
         self.__status_code: int = status_code
         self.__headers: List[Tuple[str, str]] = headers
+        self.__datas: bytes = datas
 
     @property
     def status_code(self) -> int:
@@ -44,13 +46,18 @@ class ResponseProxy():
 
     @property
     def generator(self) -> Generator[bytes, Any, None]:
-        yield b""
+        yield self.__datas
 
     def close(self):
         pass
 
     def set_cookie(self, keyword: str, value: str):
         self.headers.append((Headers.SET_COOKIE.value, f"{keyword}={value}"))
+
+    @classmethod
+    def make_ok_response(cls, datas: bytes) -> "ResponseProxy":
+        headers: List[Tuple[str, str]] = [(Headers.CONTENT_LENGTH.value, str(len(datas)))]  # noqa:E501
+        return ResponseProxy(status_code=200, headers=headers, datas=datas)
 
     @classmethod
     def redirect(cls, status_code: int = 302, location: str = "/") -> "ResponseProxy":  # noqa:E501
