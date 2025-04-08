@@ -7,17 +7,15 @@ import unittest
 from unittest import mock
 
 from xserver.http import proxy
-from xserver.http.proxy import HttpProxy
-from xserver.http.proxy import RequestProxy
 
 
 class FakeProxy():
     def __init__(self, host: str, port: int):
-        self.request_proxy: RequestProxy = RequestProxy("https://example.com/")
+        self.request_proxy: proxy.RequestProxy = proxy.RequestProxy("https://example.com/")  # noqa:E501
         self.listen_address = (host, port)
 
     def run(self):
-        self.httpd = ThreadingHTTPServer(self.listen_address, lambda *args: HttpProxy(*args, request_proxy=self.request_proxy))  # noqa:E501
+        self.httpd = ThreadingHTTPServer(self.listen_address, lambda *args: proxy.HttpProxy(*args, request_proxy=self.request_proxy))  # noqa:E501
         self.httpd.serve_forever()
 
 
@@ -44,15 +42,16 @@ class TestResponseProxy(unittest.TestCase):
             self.assertEqual(chunk, b"test")
 
     def test_close(self):
-        self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=[]).close())  # noqa:E501
+        self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=proxy.Header()).close())  # noqa:E501
 
     def test_set_cookie(self):
-        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers=[]).set_cookie("test", "unit"))  # noqa:E501
+        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers=proxy.Header()).set_cookie("test", "unit"))  # noqa:E501
 
     def test_redirect(self):
         response = proxy.ResponseProxy.redirect()
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers, [("Location", "/")])
+        for header in response.headers:
+            self.assertEqual(header, ("Location", "/"))
 
 
 class TestRequestProxyResponse(unittest.TestCase):
@@ -79,7 +78,7 @@ class TestRequestProxyResponse(unittest.TestCase):
         self.assertEqual(self.response.status_code, 404)
 
     def test_headers(self):
-        self.assertEqual(self.response.headers, [])
+        self.assertEqual(len(self.response.headers), 0)
 
     def test_generator(self):
         for chunk in self.response.generator:
@@ -93,7 +92,7 @@ class TestRequestProxy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.request_proxy: RequestProxy = RequestProxy("https://example.com/")
+        cls.request_proxy: proxy.RequestProxy = proxy.RequestProxy("https://example.com/")  # noqa:E501
 
     @classmethod
     def tearDownClass(cls):

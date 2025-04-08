@@ -4,16 +4,16 @@ from http.server import BaseHTTPRequestHandler
 from typing import Any
 from typing import Dict
 from typing import Generator
-from typing import List
 from typing import MutableMapping
 from typing import Optional
-from typing import Tuple
 from urllib.parse import urljoin
 
 from requests import Response
 from requests import get  # noqa:H306
 from requests import post
 from xhtml.header.headers import Headers
+
+from xserver.http.header import Header
 
 
 class ProxyError(Exception):
@@ -30,10 +30,10 @@ class ResponseProxy():
     """API Response Proxy"""
     CHUNK_SIZE: int = 1048576  # 1MB
 
-    def __init__(self, status_code: int, headers: List[Tuple[str, str]],
+    def __init__(self, status_code: int, headers: Header,
                  datas: bytes = b"") -> None:
         self.__status_code: int = status_code
-        self.__headers: List[Tuple[str, str]] = headers
+        self.__headers: Header = headers
         self.__datas: bytes = datas
 
     @property
@@ -41,7 +41,7 @@ class ResponseProxy():
         return self.__status_code
 
     @property
-    def headers(self) -> List[Tuple[str, str]]:
+    def headers(self) -> Header:
         return self.__headers
 
     @property
@@ -52,16 +52,16 @@ class ResponseProxy():
         pass
 
     def set_cookie(self, keyword: str, value: str):
-        self.headers.append((Headers.SET_COOKIE.value, f"{keyword}={value}"))
+        self.headers.add(Headers.SET_COOKIE.value, f"{keyword}={value}")
 
     @classmethod
     def make_ok_response(cls, datas: bytes) -> "ResponseProxy":
-        headers: List[Tuple[str, str]] = [(Headers.CONTENT_LENGTH.value, str(len(datas)))]  # noqa:E501
+        headers: Header = Header([(Headers.CONTENT_LENGTH.value, str(len(datas)))])  # noqa:E501
         return ResponseProxy(status_code=200, headers=headers, datas=datas)
 
     @classmethod
     def redirect(cls, status_code: int = 302, location: str = "/") -> "ResponseProxy":  # noqa:E501
-        headers: List[Tuple[str, str]] = [(Headers.LOCATION.value, location)]
+        headers: Header = Header([(Headers.LOCATION.value, location)])
         return ResponseProxy(status_code=status_code, headers=headers)
 
 
@@ -76,7 +76,7 @@ class RequestProxyResponse(ResponseProxy):
     ]
 
     def __init__(self, response: Response) -> None:
-        headers: List[Tuple[str, str]] = [i for i in response.headers.items() if i[0] not in self.EXCLUDED_HEADERS]  # noqa:E501
+        headers: Header = Header([(k, v) for k, v in response.headers.items() if k not in self.EXCLUDED_HEADERS])  # noqa:E501
         super().__init__(status_code=response.status_code, headers=headers)
         self.__response: Response = response
 
