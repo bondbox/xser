@@ -9,8 +9,7 @@ from typing import Optional
 from urllib.parse import urljoin
 
 from requests import Response
-from requests import get  # noqa:H306
-from requests import post
+from requests import Session
 from xhtml.header.headers import Headers
 
 from xserver.http.header import Header
@@ -104,10 +103,15 @@ class RequestProxy():
 
     def __init__(self, target_url: str) -> None:
         self.__target_url: str = target_url
+        self.__session: Session = Session()
 
     @property
     def target_url(self) -> str:
         return self.__target_url
+
+    @property
+    def session(self) -> Session:
+        return self.__session
 
     def urljoin(self, path: str) -> str:
         return urljoin(base=self.target_url, url=path)
@@ -121,7 +125,7 @@ class RequestProxy():
                 ) -> RequestProxyResponse:
         url: str = self.urljoin(path.lstrip("/"))
         if method == "GET":
-            response = get(
+            response = self.session.get(
                 url=url,
                 data=data,
                 headers=headers,
@@ -129,7 +133,7 @@ class RequestProxy():
             )
             return RequestProxyResponse(response)
         if method == "POST":
-            response = post(
+            response = self.session.post(
                 url=url,
                 data=data,
                 headers=headers,

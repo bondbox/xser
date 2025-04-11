@@ -92,7 +92,10 @@ class TestRequestProxy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.request_proxy: proxy.RequestProxy = proxy.RequestProxy("https://example.com/")  # noqa:E501
+        with mock.patch.object(proxy, "Session") as mock_session:
+            cls.fake_session = mock.MagicMock()
+            mock_session.side_effect = [cls.fake_session]
+            cls.request_proxy: proxy.RequestProxy = proxy.RequestProxy("https://example.com/")  # noqa:E501
 
     @classmethod
     def tearDownClass(cls):
@@ -104,11 +107,9 @@ class TestRequestProxy(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @mock.patch.object(proxy, "get", mock.MagicMock())
     def test_request_GET(self):
         self.assertIsInstance(self.request_proxy.request("test", "GET"), proxy.ResponseProxy)  # noqa:E501
 
-    @mock.patch.object(proxy, "post", mock.MagicMock())
     def test_request_POST(self):
         self.assertIsInstance(self.request_proxy.request("test", "POST"), proxy.ResponseProxy)  # noqa:E501
 
@@ -155,12 +156,12 @@ class TestHttpProxy(unittest.TestCase):
     def test_do_GET(self):
         with mock.patch.object(self.fake_proxy.request_proxy, "request") as mock_request:  # noqa:E501
             mock_request.side_effect = [self.fake_response]
-            proxy.get(self.url)
+            proxy.Session().get(self.url)
 
     def test_do_POST(self):
         with mock.patch.object(self.fake_proxy.request_proxy, "request") as mock_request:  # noqa:E501
             mock_request.side_effect = [self.fake_response]
-            proxy.post(self.url)
+            proxy.Session().post(self.url)
 
 
 if __name__ == "__main__":
