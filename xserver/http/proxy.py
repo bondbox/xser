@@ -2,6 +2,7 @@
 
 from http.server import BaseHTTPRequestHandler
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import MutableMapping
@@ -142,10 +143,14 @@ class RequestProxy():
             return RequestProxyResponse(response)
         raise MethodNotAllowed()
 
+    @classmethod
+    def create(cls, *args, **kwargs) -> "RequestProxy":
+        return cls(target_url=kwargs["target_url"])
+
 
 class HttpProxy(BaseHTTPRequestHandler):
-    def __init__(self, *args, request_proxy: RequestProxy):
-        self.__request_proxy: RequestProxy = request_proxy
+    def __init__(self, *args, create_request_proxy: Callable[..., RequestProxy], **kwargs):  # noqa:E501
+        self.__request_proxy: RequestProxy = create_request_proxy(*args, **kwargs)  # noqa:E501
         super().__init__(*args)
 
     @property
