@@ -6,16 +6,21 @@ from time import sleep
 import unittest
 from unittest import mock
 
+from requests.exceptions import ConnectionError
+
 from xserver.http import proxy
 
 
 class FakeProxy():
     def __init__(self, host: str, port: int):
-        self.request_proxy: proxy.RequestProxy = proxy.RequestProxy("https://example.com/")  # noqa:E501
+        self.target_url = "https://example.com/"
         self.listen_address = (host, port)
 
     def run(self):
-        self.httpd = ThreadingHTTPServer(self.listen_address, lambda *args: proxy.HttpProxy(*args, request_proxy=self.request_proxy))  # noqa:E501
+        self.httpd = ThreadingHTTPServer(
+            self.listen_address, lambda *args: proxy.HttpProxy(
+                *args, create_request_proxy=proxy.RequestProxy.create,
+                target_url=self.target_url))
         self.httpd.serve_forever()
 
 
@@ -153,15 +158,22 @@ class TestHttpProxy(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_do_GET(self):
-        with mock.patch.object(self.fake_proxy.request_proxy, "request") as mock_request:  # noqa:E501
-            mock_request.side_effect = [self.fake_response]
-            proxy.Session().get(self.url)
+    @mock.patch.object(proxy.RequestProxy, "request")
+    @mock.patch.object(proxy.HttpProxy, "send_response")
+    def test_forward_BrokenPipeError(self, mock_send_response, mock_request):
+        mock_send_response.side_effect = [BrokenPipeError()]
+        mock_request.side_effect = [self.fake_response]
+        self.assertRaises(ConnectionError, proxy.Session().get, self.url)
 
-    def test_do_POST(self):
-        with mock.patch.object(self.fake_proxy.request_proxy, "request") as mock_request:  # noqa:E501
-            mock_request.side_effect = [self.fake_response]
-            proxy.Session().post(self.url)
+    @mock.patch.object(proxy.RequestProxy, "request")
+    def test_do_GET(self, mock_request):
+        mock_request.side_effect = [self.fake_response]
+        proxy.Session().get(self.url)
+
+    @mock.patch.object(proxy.RequestProxy, "request")
+    def test_do_POST(self, mock_request):
+        mock_request.side_effect = [self.fake_response]
+        proxy.Session().post(self.url)
 
 
 if __name__ == "__main__":
