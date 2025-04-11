@@ -162,16 +162,20 @@ class HttpProxy(BaseHTTPRequestHandler):
         return self.rfile.read(content_length) if content_length > 0 else None
 
     def forward(self, rp: ResponseProxy):
-        self.send_response(rp.status_code)
-        for header in rp.headers:
-            k: str = header[0]
-            v: str = header[1]
-            self.send_header(k, v)
-        self.end_headers()
-        for chunk in rp.generator:
-            self.wfile.write(chunk)
-            self.wfile.flush()
-        rp.close()
+        try:
+            self.send_response(rp.status_code)
+            for header in rp.headers:
+                k: str = header[0]
+                v: str = header[1]
+                self.send_header(k, v)
+            self.end_headers()
+            for chunk in rp.generator:
+                self.wfile.write(chunk)
+                self.wfile.flush()
+        except BrokenPipeError:
+            pass
+        finally:
+            rp.close()
 
     def do_GET(self):
         headers = self.request_proxy.filter_headers(
