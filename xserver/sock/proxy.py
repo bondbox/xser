@@ -4,18 +4,13 @@ from socket import create_connection
 from socket import socket
 from socket import timeout
 from threading import Thread
-from typing import Optional
 from typing import Tuple
 
-from xhtml.header.headers import Headers
-
-from xserver.sock.header import RequestHeader
-from xserver.sock.header import ResponseHeader
+CHUNK_SIZE: int = 1048576  # 1MB
 
 
 class ResponseProxy():
     """Socket Response Proxy"""
-    CHUNK_SIZE: int = 1048576  # 1MB
 
     def __init__(self, client: socket, server: socket) -> None:
         self.__thread: Thread = Thread(target=self.handler)
@@ -38,17 +33,8 @@ class ResponseProxy():
     def handler(self):
         try:
             while self.running:
-                data: bytes = self.server.recv(self.CHUNK_SIZE)
-                head = ResponseHeader.parse(data)
-                if head is None:
-                    self.__running = False
-                    break
-                self.client.sendall(data)
-                content_length: int = int(head.headers.get(Headers.CONTENT_LENGTH.value, "0"))  # noqa:E501
-                content_length -= (len(data) - head.length)
-                while content_length > 0:
-                    data = self.server.recv(min(content_length, self.CHUNK_SIZE))  # noqa:E501
-                    content_length -= len(data)
+                data: bytes = self.server.recv(CHUNK_SIZE)
+                if len(data) > 0:
                     self.client.sendall(data)
         except Exception:
             pass
@@ -78,29 +64,16 @@ class SockProxy():
     def timeout(self) -> float:
         return self.__timeout
 
-    def new_connection(self, client: socket):
-        response: Optional[ResponseProxy] = None
+    def new_connection(self, client: socket, data: bytes):
+        client.settimeout(self.timeout)
+        server: socket = create_connection(address=self.target)
+        response: ResponseProxy = ResponseProxy(client, server)
         try:
-            client.settimeout(self.timeout)
+            response.start()
             while True:
-                data: bytes = client.recv(ResponseProxy.CHUNK_SIZE)
-                head = RequestHeader.parse(data)
-                if head is None:
-                    break
-                if response is None:
-                    server = create_connection(address=self.target)
-                    response = ResponseProxy(client, server)
-                    response.start()
-                server.sendall(data)
-                content_length: int = int(head.headers.get(Headers.CONTENT_LENGTH.value, "0"))  # noqa:E501
-                content_length -= (len(data) - head.length)
-                while content_length > 0:
-                    data = client.recv(min(content_length, ResponseProxy.CHUNK_SIZE))  # noqa:E501
-                    content_length -= len(data)
+                if len(data) > 0:
                     server.sendall(data)
-                connection: str = head.headers.get(Headers.CONNECTION.value, "keep-alive" if head.request_line.protocol == "HTTP/1.1" else "close")  # noqa:E501
-                if connection != "keep-alive":
-                    break
+                data = client.recv(CHUNK_SIZE)
         except timeout:
             pass
         except OSError:
@@ -108,5 +81,4 @@ class SockProxy():
         except Exception:
             pass
         finally:
-            if response is not None:
-                response.stop()
+            response.stop()

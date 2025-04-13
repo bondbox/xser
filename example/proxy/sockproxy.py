@@ -6,7 +6,21 @@ from socket import socket
 
 from xkits import ThreadPool
 
+from xserver.sock.header import RequestHeader
+from xserver.sock.proxy import CHUNK_SIZE
 from xserver.sock.proxy import SockProxy
+
+
+def new_connection(proxy: SockProxy, client: socket):
+    print(f"Connection {client.getpeername()} connecting")
+    data: bytes = client.recv(CHUNK_SIZE)
+    head = RequestHeader.parse(data)
+    if head is not None:
+        print(f"{head.request_line.method} {head.request_line.target}")
+        proxy.new_connection(client, data)
+    else:
+        print(f"Invalid request: {data}")
+        client.close()
 
 
 def run(host: str, port: int):
@@ -20,9 +34,8 @@ def run(host: str, port: int):
             proxy: SockProxy = SockProxy("example.com", 80, 30)
 
             while True:
-                client, address = server.accept()
-                print(f"Connection {address} connecting")
-                pool.submit(proxy.new_connection, client)
+                client, _ = server.accept()
+                pool.submit(new_connection, proxy, client)
 
 
 if __name__ == "__main__":
