@@ -1,4 +1,4 @@
 xkits-command>=0.2
 xkits-thread>=0.1
-xhtm>=0.7
+xhtm>=0.8
 requests
