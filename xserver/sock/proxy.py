@@ -6,6 +6,8 @@ from socket import timeout
 from threading import Thread
 from typing import Tuple
 
+from xkits_lib import TimeUnit
+
 CHUNK_SIZE: int = 1048576  # 1MB
 
 
@@ -52,20 +54,20 @@ class ResponseProxy():
 
 
 class SockProxy():
-    def __init__(self, host: str, port: int, timeout: float):
+    def __init__(self, host: str, port: int, timeout: TimeUnit):
         self.__target: Tuple[str, int] = (host, port)
-        self.__timeout: float = timeout
+        self.__timeout: TimeUnit = timeout
 
     @property
     def target(self) -> Tuple[str, int]:
         return self.__target
 
     @property
-    def timeout(self) -> float:
+    def timeout(self) -> TimeUnit:
         return self.__timeout
 
     def new_connection(self, client: socket, data: bytes):
-        # client.settimeout(self.timeout)
+        client.settimeout(self.timeout)
         server: socket = create_connection(address=self.target)
         response: ResponseProxy = ResponseProxy(client, server)
         try:
