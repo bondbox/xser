@@ -4,7 +4,7 @@ from socket import AF_INET
 from socket import SOCK_STREAM
 from socket import socket
 
-from xkits import ThreadPool
+from xkits_thread import ThreadPool
 
 from xserver.sock.header import RequestHeader
 from xserver.sock.proxy import CHUNK_SIZE
