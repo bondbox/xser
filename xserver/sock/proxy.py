@@ -65,7 +65,7 @@ class SockProxy():
         return self.__timeout
 
     def new_connection(self, client: socket, data: bytes):
-        client.settimeout(self.timeout)
+        # client.settimeout(self.timeout)
         server: socket = create_connection(address=self.target)
         response: ResponseProxy = ResponseProxy(client, server)
         try:
