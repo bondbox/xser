@@ -90,6 +90,7 @@ class SockProxy():
         server.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
         client.setsockopt(SOL_SOCKET, SO_RCVBUF, self.chunk)
         client.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
+        server.settimeout(self.timeout)
         client.settimeout(self.timeout)
         seconds: float = 0.001
 
