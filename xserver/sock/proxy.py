@@ -7,7 +7,6 @@ from socket import create_connection  # noqa:H306
 from socket import socket
 from socket import timeout
 from threading import Thread
-from time import sleep
 from typing import Tuple
 
 from xkits_lib import TimeUnit
@@ -40,19 +39,17 @@ class ResponseProxy():
         return self.__chunk
 
     def handler(self):
-        seconds: float = 0.001
-
         try:
             while self.running:
-                data: bytes = self.server.recv(self.chunk)
-                if len(data) > 0:
-                    seconds = max(0.001, seconds * 0.6)
-                    self.client.sendall(data)
-                else:
-                    seconds = min(seconds * 1.1, 0.1)
-                    sleep(seconds)
-        except timeout:
-            pass
+                try:
+                    data: bytes = self.server.recv(self.chunk)
+                except timeout:
+                    continue
+
+                if len(data) == 0:
+                    break
+
+                self.client.sendall(data)
         except Exception:
             pass
         finally:
@@ -96,22 +93,21 @@ class SockProxy():
         client.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
         server.settimeout(self.timeout)
         client.settimeout(self.timeout)
-        seconds: float = 0.001
 
         response: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)  # noqa:E501
 
         try:
             response.start()
             while True:
-                if len(data) > 0:
-                    seconds = max(0.001, seconds * 0.6)
-                    server.sendall(data)
-                else:
-                    seconds = min(seconds * 1.1, 0.1)
-                    sleep(seconds)
-                data = client.recv(self.chunk)
-        except timeout:
-            pass
+                if len(data) == 0:
+                    break
+
+                server.sendall(data)
+
+                try:
+                    data = client.recv(self.chunk)
+                except timeout:
+                    pass
         except OSError:
             pass
         except Exception:
