@@ -33,7 +33,18 @@ class TestResponseProxy(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_handler(self):
+    def test_handler_timeout(self):
+        self.fake_client.fileno.side_effect = [1]
+        self.fake_server.fileno.side_effect = [2]
+        self.fake_client.sendall.side_effect = [proxy.timeout()]
+        self.fake_server.recv.side_effect = [b"", b"test"]
+        self.assertIsNone(self.proxy.start())
+        self.assertIsNone(self.proxy.handler())
+        self.assertIsNone(self.proxy.stop())
+
+    def test_handler_Exception(self):
+        self.fake_client.fileno.side_effect = [1]
+        self.fake_server.fileno.side_effect = [2]
         self.fake_client.sendall.side_effect = [Exception()]
         self.fake_server.recv.side_effect = [b"", b"test"]
         self.assertIsNone(self.proxy.start())

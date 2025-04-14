@@ -51,11 +51,15 @@ class ResponseProxy():
                 else:
                     seconds = min(seconds * 1.1, 0.1)
                     sleep(seconds)
+        except timeout:
+            pass
         except Exception:
             pass
         finally:
-            self.server.close()
-            self.client.close()
+            if self.server.fileno() >= 0:
+                self.server.close()
+            if self.client.fileno() >= 0:
+                self.client.close()
 
     def start(self):
         self.__running = True
