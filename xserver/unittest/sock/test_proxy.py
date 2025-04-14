@@ -28,7 +28,7 @@ class TestResponseProxy(unittest.TestCase):
                 self.assertIs(client, self.fake_client)
                 self.assertIs(server, self.fake_server)
                 mock_thread.side_effect = [self.fake_thread]
-                self.proxy = proxy.ResponseProxy(client, server)
+                self.proxy = proxy.ResponseProxy(client, server, 65536)
 
     def tearDown(self):
         pass

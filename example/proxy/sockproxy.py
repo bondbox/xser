@@ -7,8 +7,9 @@ from socket import socket
 from xkits_thread import ThreadPool
 
 from xserver.sock.header import RequestHeader
-from xserver.sock.proxy import CHUNK_SIZE
 from xserver.sock.proxy import SockProxy
+
+CHUNK_SIZE: int = 1048576  # 1MB
 
 
 def new_connection(proxy: SockProxy, client: socket):
