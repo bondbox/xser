@@ -35,7 +35,7 @@ class TestResponseProxy(unittest.TestCase):
 
     def test_handler(self):
         self.fake_client.sendall.side_effect = [Exception()]
-        self.fake_server.recv.side_effect = [b"test"]
+        self.fake_server.recv.side_effect = [b"", b"test"]
         self.assertIsNone(self.proxy.start())
         self.assertIsNone(self.proxy.handler())
         self.assertIsNone(self.proxy.stop())
@@ -70,8 +70,8 @@ class TestSockProxy(unittest.TestCase):
         mock_create_connection.side_effect = [fake_server]
         client = proxy.socket()
         self.assertIs(client, fake_client)
-        fake_client.recv.side_effect = [proxy.timeout()]
-        self.assertIsNone(self.proxy.new_connection(client, b"test"))
+        fake_client.recv.side_effect = [b"test", proxy.timeout()]
+        self.assertIsNone(self.proxy.new_connection(client, b""))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
@@ -84,8 +84,8 @@ class TestSockProxy(unittest.TestCase):
         mock_create_connection.side_effect = [fake_server]
         client = proxy.socket()
         self.assertIs(client, fake_client)
-        fake_client.recv.side_effect = [OSError()]
-        self.assertIsNone(self.proxy.new_connection(client, b"test"))
+        fake_client.recv.side_effect = [b"test", OSError()]
+        self.assertIsNone(self.proxy.new_connection(client, b""))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
@@ -98,8 +98,8 @@ class TestSockProxy(unittest.TestCase):
         mock_create_connection.side_effect = [fake_server]
         client = proxy.socket()
         self.assertIs(client, fake_client)
-        fake_client.recv.side_effect = [Exception()]
-        self.assertIsNone(self.proxy.new_connection(client, b"test"))
+        fake_client.recv.side_effect = [b"test", Exception()]
+        self.assertIsNone(self.proxy.new_connection(client, b""))
 
 
 if __name__ == "__main__":

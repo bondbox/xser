@@ -4,6 +4,7 @@ from socket import create_connection
 from socket import socket
 from socket import timeout
 from threading import Thread
+from time import sleep
 from typing import Tuple
 
 from xkits_lib import TimeUnit
@@ -33,11 +34,17 @@ class ResponseProxy():
         return self.__running
 
     def handler(self):
+        seconds: float = 0.001
+
         try:
             while self.running:
                 data: bytes = self.server.recv(CHUNK_SIZE)
                 if len(data) > 0:
+                    seconds = max(0.001, seconds * 0.6)
                     self.client.sendall(data)
+                else:
+                    seconds = min(seconds * 1.1, 0.1)
+                    sleep(seconds)
         except Exception:
             pass
         finally:
@@ -67,14 +74,20 @@ class SockProxy():
         return self.__timeout
 
     def new_connection(self, client: socket, data: bytes):
+        seconds: float = 0.001
         client.settimeout(self.timeout)
         server: socket = create_connection(address=self.target)
         response: ResponseProxy = ResponseProxy(client, server)
+
         try:
             response.start()
             while True:
                 if len(data) > 0:
+                    seconds = max(0.001, seconds * 0.6)
                     server.sendall(data)
+                else:
+                    seconds = min(seconds * 1.1, 0.1)
+                    sleep(seconds)
                 data = client.recv(CHUNK_SIZE)
         except timeout:
             pass
