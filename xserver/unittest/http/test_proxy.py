@@ -47,16 +47,16 @@ class TestResponseProxy(unittest.TestCase):
             self.assertEqual(chunk, b"test")
 
     def test_close(self):
-        self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=proxy.Header()).close())  # noqa:E501
+        self.assertIsNone(proxy.ResponseProxy(status_code=304, headers=proxy.HeaderSequence()).close())  # noqa:E501
 
     def test_set_cookie(self):
-        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers=proxy.Header()).set_cookie("test", "unit"))  # noqa:E501
+        self.assertIsNone(proxy.ResponseProxy(status_code=404, headers=proxy.HeaderSequence()).set_cookie("test", "unit"))  # noqa:E501
 
     def test_redirect(self):
         response = proxy.ResponseProxy.redirect()
         self.assertEqual(response.status_code, 302)
         for header in response.headers:
-            self.assertEqual(header, ("Location", "/"))
+            self.assertEqual(header, (proxy.Headers.LOCATION.http2, "/"))
 
 
 class TestRequestProxyResponse(unittest.TestCase):

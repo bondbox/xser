@@ -11,9 +11,8 @@ from urllib.parse import urljoin
 
 from requests import Response
 from requests import Session
+from xhtml.header.headers import HeaderSequence
 from xhtml.header.headers import Headers
-
-from xserver.http.header import Header
 
 
 class ProxyError(Exception):
@@ -30,10 +29,9 @@ class ResponseProxy():
     """API Response Proxy"""
     CHUNK_SIZE: int = 1048576  # 1MB
 
-    def __init__(self, status_code: int, headers: Header,
-                 datas: bytes = b"") -> None:
+    def __init__(self, status_code: int, headers: HeaderSequence, datas: bytes = b"") -> None:  # noqa:E501
         self.__status_code: int = status_code
-        self.__headers: Header = headers
+        self.__headers: HeaderSequence = headers
         self.__datas: bytes = datas
 
     @property
@@ -41,7 +39,7 @@ class ResponseProxy():
         return self.__status_code
 
     @property
-    def headers(self) -> Header:
+    def headers(self) -> HeaderSequence:
         return self.__headers
 
     @property
@@ -56,12 +54,12 @@ class ResponseProxy():
 
     @classmethod
     def make_ok_response(cls, datas: bytes) -> "ResponseProxy":
-        headers: Header = Header([(Headers.CONTENT_LENGTH.value, str(len(datas)))])  # noqa:E501
+        headers: HeaderSequence = HeaderSequence([(Headers.CONTENT_LENGTH.value, str(len(datas)))])  # noqa:E501
         return ResponseProxy(status_code=200, headers=headers, datas=datas)
 
     @classmethod
     def redirect(cls, status_code: int = 302, location: str = "/") -> "ResponseProxy":  # noqa:E501
-        headers: Header = Header([(Headers.LOCATION.value, location)])
+        headers: HeaderSequence = HeaderSequence([(Headers.LOCATION.value, location)])  # noqa:E501
         return ResponseProxy(status_code=status_code, headers=headers)
 
 
@@ -69,14 +67,14 @@ class RequestProxyResponse(ResponseProxy):
     """API Request Proxy Response"""
 
     EXCLUDED_HEADERS = [
-        Headers.CONNECTION.value,
-        Headers.CONTENT_ENCODING.value,
-        Headers.CONTENT_LENGTH.value,
-        Headers.TRANSFER_ENCODING.value,
+        Headers.CONNECTION.http2,
+        Headers.CONTENT_ENCODING.http2,
+        Headers.CONTENT_LENGTH.http2,
+        Headers.TRANSFER_ENCODING.http2,
     ]
 
     def __init__(self, response: Response) -> None:
-        headers: Header = Header([(k, v) for k, v in response.headers.items() if k not in self.EXCLUDED_HEADERS])  # noqa:E501
+        headers: HeaderSequence = HeaderSequence([(k, v) for k, v in response.headers.items() if k.lower() not in self.EXCLUDED_HEADERS])  # noqa:E501
         super().__init__(status_code=response.status_code, headers=headers)
         self.__response: Response = response
 
@@ -93,13 +91,13 @@ class RequestProxy():
     """API Request Proxy"""
 
     EXCLUDED_HEADERS = [
-        Headers.CONNECTION.value,
-        Headers.CONTENT_LENGTH.value,
-        Headers.HOST.value,
-        Headers.KEEP_ALIVE.value,
-        Headers.PROXY_AUTHORIZATION.value,
-        Headers.TRANSFER_ENCODING.value,
-        Headers.VIA.value,
+        Headers.CONNECTION.http2,
+        Headers.CONTENT_LENGTH.http2,
+        Headers.HOST.http2,
+        Headers.KEEP_ALIVE.http2,
+        Headers.PROXY_AUTHORIZATION.http2,
+        Headers.TRANSFER_ENCODING.http2,
+        Headers.VIA.http2,
     ]
 
     def __init__(self, target_url: str) -> None:
@@ -119,7 +117,7 @@ class RequestProxy():
 
     @classmethod
     def filter_headers(cls, headers: MutableMapping[str, str]) -> Dict[str, str]:  # noqa:E501
-        return {k: v for k, v in headers.items() if k not in cls.EXCLUDED_HEADERS}  # noqa:E501
+        return {k: v for k, v in headers.items() if k.lower() not in cls.EXCLUDED_HEADERS}  # noqa:E501
 
     def request(self, path: str, method: str, data: Optional[bytes] = None,
                 headers: Optional[MutableMapping[str, str]] = None

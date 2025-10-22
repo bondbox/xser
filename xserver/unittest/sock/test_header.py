@@ -30,7 +30,7 @@ class TestRequestHeader(unittest.TestCase):
         self.assertEqual(request.request_line.method, "GET")
         self.assertEqual(request.request_line.target, "/")
 
-        self.assertIsInstance(request.headers, header.Header)
+        self.assertIsInstance(request.headers, header.HeaderMapping)
 
         self.assertEqual(request.length, 35)
 
@@ -60,7 +60,7 @@ class TestResponseHeader(unittest.TestCase):
         self.assertEqual(response.status_line.status_code, 200)
         self.assertEqual(response.status_line.status_text, "OK")
 
-        self.assertIsInstance(response.headers, header.Header)
+        self.assertIsInstance(response.headers, header.HeaderMapping)
 
         self.assertEqual(response.length, 59)
 
