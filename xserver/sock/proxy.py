@@ -9,7 +9,7 @@ from socket import timeout
 from threading import Thread
 from typing import Tuple
 
-from xkits_lib import TimeUnit
+from xkits_lib.unit import TimeUnit
 
 
 class ResponseProxy():
