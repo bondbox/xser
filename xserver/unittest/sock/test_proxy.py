@@ -1,12 +1,13 @@
 # coding:utf-8
 
-import unittest
+from unittest import TestCase
+from unittest import main
 from unittest import mock
 
 from xserver.sock import proxy
 
 
-class TestResponseProxy(unittest.TestCase):
+class TestResponseProxy(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -51,7 +52,7 @@ class TestResponseProxy(unittest.TestCase):
         self.assertIsNone(self.proxy.stop())
 
 
-class TestSockProxy(unittest.TestCase):
+class TestSockProxy(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -112,4 +113,4 @@ class TestSockProxy(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

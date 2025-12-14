@@ -3,7 +3,8 @@
 from http.server import ThreadingHTTPServer
 from threading import Thread
 from time import sleep
-import unittest
+from unittest import TestCase
+from unittest import main
 from unittest import mock
 
 from requests.exceptions import ConnectionError
@@ -24,7 +25,7 @@ class FakeProxy():
         self.httpd.serve_forever()
 
 
-class TestResponseProxy(unittest.TestCase):
+class TestResponseProxy(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -59,7 +60,7 @@ class TestResponseProxy(unittest.TestCase):
             self.assertEqual(header, (proxy.Headers.LOCATION.http2, "/"))
 
 
-class TestRequestProxyResponse(unittest.TestCase):
+class TestRequestProxyResponse(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -93,7 +94,7 @@ class TestRequestProxyResponse(unittest.TestCase):
         self.assertIsNone(self.response.close())
 
 
-class TestRequestProxy(unittest.TestCase):
+class TestRequestProxy(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -122,7 +123,7 @@ class TestRequestProxy(unittest.TestCase):
         self.assertRaises(proxy.MethodNotAllowed, self.request_proxy.request, "test", "PUT")  # noqa:E501
 
 
-class TestHttpProxy(unittest.TestCase):
+class TestHttpProxy(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -177,4 +178,4 @@ class TestHttpProxy(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

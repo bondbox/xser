@@ -1,11 +1,12 @@
 # coding:utf-8
 
-import unittest
+from unittest import TestCase
+from unittest import main
 
 from xserver.sock import header
 
 
-class TestRequestHeader(unittest.TestCase):
+class TestRequestHeader(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -35,7 +36,7 @@ class TestRequestHeader(unittest.TestCase):
         self.assertEqual(request.length, 35)
 
 
-class TestResponseHeader(unittest.TestCase):
+class TestResponseHeader(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -66,4 +67,4 @@ class TestResponseHeader(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    main()
