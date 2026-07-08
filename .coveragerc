@@ -1,12 +1,16 @@
 [run]
-omit =
-    xserver/unittest/*
-    xserver/attribute.py
+omit = 
+	xserver/attribute.py
+	xserver/unittest/*
+source = 
+	xserver
 
 [report]
-exclude_lines =
-    pragma: no cover
-    raise NotImplementedError
-    if __name__ == .__main__.:
-    def __repr__
-    pass
+exclude_lines = 
+	pragma: no cover
+	raise NotImplementedError
+	if __name__ == .__main__.:
+	def __repr__
+	pass
+fail_under = 100
+

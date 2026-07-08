@@ -1,0 +1,39 @@
+name = "xser"
+home = "https://github.com/bondbox/xser/"
+description = "Socket and HTTP Server"
+keywords = []
+version = "0.5.1"
+
+[authors.zoumingzhe]
+name = "Mingzhe Zou"
+email = "zoumingzhe@outlook.com"
+
+[packages.xser]
+requires_python = ">=3.8"
+authors = [
+    "zoumingzhe",
+]
+keywords = []
+requirements = [
+    "xkits-thread>=0.3",
+    "xhtm>=0.13",
+    "requests",
+]
+build_backend = "hatchling"
+max_complexity = 10
+max_line_length = 127
+
+[packages.xser.modules.xserver]
+base = "xserver"
+exclude = [
+    "unittest",
+]
+omitted = [
+    "attribute.py",
+    "unittest/*",
+]
+
+[packages.xser.modules.xserver.scripts]
+
+[packages.xser.modules.xserver.templates]
+"attribute.py" = true

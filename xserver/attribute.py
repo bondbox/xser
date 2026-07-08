@@ -1,10 +1,11 @@
 # coding:utf-8
 
-__project__ = "xser"
-__version__ = "0.5.1"
-__urlhome__ = "https://github.com/bondbox/xser/"
-__description__ = "Socket and HTTP Server"
+# project info
+__project_name__ = "xser"
+__project_home__ = "https://github.com/bondbox/xser/"
+__project_desc__ = "Socket and HTTP Server"
 
-# author
-__author__ = "Mingzhe Zou"
-__author_email__ = "zoumingzhe@outlook.com"
+# package info
+__version__ = "0.5.1"
+__package_name__ = "xser"
+__package_desc__ = "Socket and HTTP Server"
