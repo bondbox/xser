@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install
       run: |
-        python -m pip install --upgrade pip xpip-build xpip-upload
+        python -m pip install --upgrade pip
         python -m pip --version
         python -m pip list
     - name: Build and Test
@@ -21,4 +21,5 @@ jobs:
         make build install test
     - name: Upload to PyPI
       run: |
+        python -m pip install --upgrade xpip-upload
         xpip-upload --token ${{ secrets.PYPI_TOKEN }} dist/*
