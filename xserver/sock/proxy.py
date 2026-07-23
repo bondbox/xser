@@ -20,7 +20,17 @@ class ResponseProxy():
         self.__client: socket = client
         self.__server: socket = server
         self.__running: bool = False
+        self.__sent_to_cli: int = 0
+        self.__sent_to_srv: int = 0
         self.__chunk: int = chunk
+
+    @property
+    def total_received_from_client(self) -> int:
+        return self.__sent_to_srv
+
+    @property
+    def total_received_from_server(self) -> int:
+        return self.__sent_to_cli
 
     @property
     def client(self) -> socket:
@@ -46,10 +56,11 @@ class ResponseProxy():
                 except timeout:
                     continue
 
-                if len(data) == 0:
+                if (cnt := len(data)) == 0:
                     break
 
                 self.client.sendall(data)
+                self.__sent_to_cli += cnt
         except Exception:
             pass
         finally:
@@ -63,8 +74,9 @@ class ResponseProxy():
             self.__running = True
             self.__thread.start()
 
-            if len(initial_data) > 0:
+            if (cnt := len(initial_data)) > 0:
                 self.server.sendall(initial_data)
+                self.__sent_to_srv += cnt
 
             while True:
                 try:
@@ -72,10 +84,11 @@ class ResponseProxy():
                 except timeout:
                     continue
 
-                if len(data) == 0:
+                if (cnt := len(data)) == 0:
                     break
 
                 self.server.sendall(data)
+                self.__sent_to_srv += cnt
         except OSError:
             pass
         except Exception:
@@ -103,7 +116,7 @@ class SockProxy():
     def chunk(self) -> int:
         return self.__chunk
 
-    def new_connection(self, client: socket, initial_data: bytes) -> None:
+    def new_connection(self, client: socket, initial_data: bytes) -> Tuple[int, int]:  # noqa:E501
         server: socket = create_connection(address=self.target)
         server.setsockopt(SOL_SOCKET, SO_RCVBUF, self.chunk)
         server.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
@@ -114,3 +127,5 @@ class SockProxy():
 
         proxy: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)
         proxy.start(initial_data=initial_data)
+
+        return (proxy.total_received_from_client, proxy.total_received_from_server)  # noqa:E501

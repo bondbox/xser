@@ -41,14 +41,18 @@ class TestResponseProxy(TestCase):
         self.fake_server.recv.side_effect = [proxy.timeout(), b""]
         with mock.patch.object(type(self.proxy), "running", new_callable=mock.PropertyMock, return_value=True):  # noqa:E501
             self.assertIsNone(self.proxy.handler())
+            self.assertEqual(self.proxy.total_received_from_client, 0)
+            self.assertEqual(self.proxy.total_received_from_server, 0)
 
     def test_handler_Exception(self):
         self.fake_client.fileno.side_effect = [1]
         self.fake_server.fileno.side_effect = [2]
-        self.fake_client.sendall.side_effect = [Exception()]
-        self.fake_server.recv.side_effect = [proxy.timeout(), b"test"]
+        self.fake_client.sendall.side_effect = [None, Exception()]
+        self.fake_server.recv.side_effect = [proxy.timeout(), b"unit", b"test"]
         with mock.patch.object(type(self.proxy), "running", new_callable=mock.PropertyMock, return_value=True):  # noqa:E501
             self.assertIsNone(self.proxy.handler())
+            self.assertEqual(self.proxy.total_received_from_client, 0)
+            self.assertEqual(self.proxy.total_received_from_server, 4)
 
 
 class TestSockProxy(TestCase):
@@ -77,7 +81,7 @@ class TestSockProxy(TestCase):
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
-        self.assertIsNone(self.proxy.new_connection(client, b""))
+        self.assertEqual(self.proxy.new_connection(client, b""), (0, 0))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
@@ -88,7 +92,7 @@ class TestSockProxy(TestCase):
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
         fake_client.recv.side_effect = [proxy.timeout(), OSError()]
-        self.assertIsNone(self.proxy.new_connection(client, b"test"))
+        self.assertEqual(self.proxy.new_connection(client, b"test"), (4, 0))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
@@ -99,7 +103,7 @@ class TestSockProxy(TestCase):
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
         fake_client.recv.side_effect = [b"test", Exception()]
-        self.assertIsNone(self.proxy.new_connection(client, b"test"))
+        self.assertEqual(self.proxy.new_connection(client, b"test"), (8, 0))
 
 
 if __name__ == "__main__":
