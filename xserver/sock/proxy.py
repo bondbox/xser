@@ -1,5 +1,7 @@
 # coding:utf-8
 
+from socket import SHUT_RD
+from socket import SHUT_WR
 from socket import SOL_SOCKET
 from socket import SO_RCVBUF  # noqa:H306
 from socket import SO_SNDBUF
@@ -97,6 +99,10 @@ class ResponseProxy():
         except Exception:
             pass
         finally:
+            if self.client.fileno() >= 0:
+                self.client.shutdown(SHUT_RD)
+            if self.server.fileno() >= 0:
+                self.server.shutdown(SHUT_WR)
             self.__running = False
             self.__thread.join()
 

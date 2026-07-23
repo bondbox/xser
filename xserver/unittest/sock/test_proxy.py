@@ -78,6 +78,8 @@ class TestSockProxy(TestCase):
     def test_new_connection(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
+        fake_client.fileno.return_value = 1
+        fake_server.fileno.return_value = 2
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
@@ -88,8 +90,8 @@ class TestSockProxy(TestCase):
     def test_new_connection_stop(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
-        fake_client.fileno.side_effect = [1]
-        fake_server.fileno.side_effect = [2]
+        fake_client.fileno.return_value = 1
+        fake_server.fileno.return_value = 2
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
@@ -100,6 +102,8 @@ class TestSockProxy(TestCase):
     def test_new_connection_OSError(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
+        fake_client.fileno.return_value = 1
+        fake_server.fileno.return_value = 2
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
@@ -111,6 +115,8 @@ class TestSockProxy(TestCase):
     def test_new_connection_Exception(self, mock_create_connection, mock_socket):  # noqa:E501
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
+        fake_client.fileno.return_value = 1
+        fake_server.fileno.return_value = 2
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
         self.assertIs(client := proxy.socket(), fake_client)
