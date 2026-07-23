@@ -69,7 +69,7 @@ class ResponseProxy():
             if self.client.fileno() >= 0:
                 self.client.close()
 
-    def start(self, initial_data: bytes = b""):
+    def start(self, initial_data: bytes = b"", stop_threshold: int = 0):
         try:
             self.__running = True
             self.__thread.start()
@@ -79,6 +79,9 @@ class ResponseProxy():
                 self.__sent_to_srv += cnt
 
             while True:
+                if stop_threshold > 0 and self.__sent_to_srv >= stop_threshold:
+                    break
+
                 try:
                     data: bytes = self.client.recv(self.chunk)
                 except timeout:
@@ -116,7 +119,7 @@ class SockProxy():
     def chunk(self) -> int:
         return self.__chunk
 
-    def new_connection(self, client: socket, initial_data: bytes) -> Tuple[int, int]:  # noqa:E501
+    def new_connection(self, client: socket, initial_data: bytes, stop_threshold: int = 0) -> Tuple[int, int]:  # noqa:E501
         server: socket = create_connection(address=self.target)
         server.setsockopt(SOL_SOCKET, SO_RCVBUF, self.chunk)
         server.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
@@ -126,6 +129,6 @@ class SockProxy():
         client.settimeout(self.timeout)
 
         proxy: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)
-        proxy.start(initial_data=initial_data)
+        proxy.start(initial_data=initial_data, stop_threshold=stop_threshold)
 
         return (proxy.total_received_from_client, proxy.total_received_from_server)  # noqa:E501

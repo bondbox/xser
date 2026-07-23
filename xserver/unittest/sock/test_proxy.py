@@ -85,6 +85,18 @@ class TestSockProxy(TestCase):
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
+    def test_new_connection_stop(self, mock_create_connection, mock_socket):
+        fake_client = mock.MagicMock()
+        fake_server = mock.MagicMock()
+        fake_client.fileno.side_effect = [1]
+        fake_server.fileno.side_effect = [2]
+        mock_socket.side_effect = [fake_client]
+        mock_create_connection.side_effect = [fake_server]
+        self.assertIs(client := proxy.socket(), fake_client)
+        self.assertEqual(self.proxy.new_connection(client, b"test", 2), (4, 0))
+
+    @mock.patch.object(proxy, "socket")
+    @mock.patch.object(proxy, "create_connection")
     def test_new_connection_OSError(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
