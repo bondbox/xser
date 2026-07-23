@@ -58,21 +58,24 @@ class ResponseProxy():
             if self.client.fileno() >= 0:
                 self.client.close()
 
-    def start(self, data: bytes):
+    def start(self, initial_data: bytes = b""):
         try:
             self.__running = True
             self.__thread.start()
 
+            if len(initial_data) > 0:
+                self.server.sendall(initial_data)
+
             while True:
+                try:
+                    data: bytes = self.client.recv(self.chunk)
+                except timeout:
+                    continue
+
                 if len(data) == 0:
                     break
 
                 self.server.sendall(data)
-
-                try:
-                    data = self.client.recv(self.chunk)
-                except timeout:
-                    pass
         except OSError:
             pass
         except Exception:
@@ -100,7 +103,7 @@ class SockProxy():
     def chunk(self) -> int:
         return self.__chunk
 
-    def new_connection(self, client: socket, data: bytes) -> None:
+    def new_connection(self, client: socket, initial_data: bytes) -> None:
         server: socket = create_connection(address=self.target)
         server.setsockopt(SOL_SOCKET, SO_RCVBUF, self.chunk)
         server.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
@@ -110,4 +113,4 @@ class SockProxy():
         client.settimeout(self.timeout)
 
         proxy: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)
-        proxy.start(data=data)
+        proxy.start(initial_data=initial_data)
