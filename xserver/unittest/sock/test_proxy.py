@@ -30,6 +30,7 @@ class TestResponseProxy(TestCase):
                 self.assertIs(server, self.fake_server)
                 mock_thread.side_effect = [self.fake_thread]
                 self.proxy = proxy.ResponseProxy(client, server, 65536)
+                self.assertFalse(self.proxy.running)
 
     def tearDown(self):
         pass
@@ -38,18 +39,16 @@ class TestResponseProxy(TestCase):
         self.fake_client.fileno.side_effect = [1]
         self.fake_server.fileno.side_effect = [2]
         self.fake_server.recv.side_effect = [proxy.timeout(), b""]
-        self.assertIsNone(self.proxy.start())
-        self.assertIsNone(self.proxy.handler())
-        self.assertIsNone(self.proxy.stop())
+        with mock.patch.object(type(self.proxy), "running", new_callable=mock.PropertyMock, return_value=True):  # noqa:E501
+            self.assertIsNone(self.proxy.handler())
 
     def test_handler_Exception(self):
         self.fake_client.fileno.side_effect = [1]
         self.fake_server.fileno.side_effect = [2]
         self.fake_client.sendall.side_effect = [Exception()]
         self.fake_server.recv.side_effect = [proxy.timeout(), b"test"]
-        self.assertIsNone(self.proxy.start())
-        self.assertIsNone(self.proxy.handler())
-        self.assertIsNone(self.proxy.stop())
+        with mock.patch.object(type(self.proxy), "running", new_callable=mock.PropertyMock, return_value=True):  # noqa:E501
+            self.assertIsNone(self.proxy.handler())
 
 
 class TestSockProxy(TestCase):
@@ -72,43 +71,34 @@ class TestSockProxy(TestCase):
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
-    @mock.patch.object(proxy.ResponseProxy, "stop", mock.MagicMock())
-    @mock.patch.object(proxy.ResponseProxy, "start", mock.MagicMock())
-    def test_new_connection_close(self, mock_create_connection, mock_socket):
+    def test_new_connection(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
-        client = proxy.socket()
-        self.assertIs(client, fake_client)
+        self.assertIs(client := proxy.socket(), fake_client)
         self.assertIsNone(self.proxy.new_connection(client, b""))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
-    @mock.patch.object(proxy.ResponseProxy, "stop", mock.MagicMock())
-    @mock.patch.object(proxy.ResponseProxy, "start", mock.MagicMock())
     def test_new_connection_OSError(self, mock_create_connection, mock_socket):
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
-        client = proxy.socket()
-        self.assertIs(client, fake_client)
-        fake_client.recv.side_effect = [b"test", OSError()]
+        self.assertIs(client := proxy.socket(), fake_client)
+        fake_client.recv.side_effect = [proxy.timeout(), OSError()]
         self.assertIsNone(self.proxy.new_connection(client, b"test"))
 
     @mock.patch.object(proxy, "socket")
     @mock.patch.object(proxy, "create_connection")
-    @mock.patch.object(proxy.ResponseProxy, "stop", mock.MagicMock())
-    @mock.patch.object(proxy.ResponseProxy, "start", mock.MagicMock())
-    def test_new_connection_Exception(self, mock_create_connection, mock_socket):  # noqa:501
+    def test_new_connection_Exception(self, mock_create_connection, mock_socket):  # noqa:E501
         fake_client = mock.MagicMock()
         fake_server = mock.MagicMock()
         mock_socket.side_effect = [fake_client]
         mock_create_connection.side_effect = [fake_server]
-        client = proxy.socket()
-        self.assertIs(client, fake_client)
-        fake_client.recv.side_effect = [b"test", proxy.timeout(), Exception()]
+        self.assertIs(client := proxy.socket(), fake_client)
+        fake_client.recv.side_effect = [b"test", Exception()]
         self.assertIsNone(self.proxy.new_connection(client, b"test"))
 
 

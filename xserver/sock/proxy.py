@@ -58,13 +58,28 @@ class ResponseProxy():
             if self.client.fileno() >= 0:
                 self.client.close()
 
-    def start(self):
-        self.__running = True
-        self.__thread.start()
+    def start(self, data: bytes):
+        try:
+            self.__running = True
+            self.__thread.start()
 
-    def stop(self):
-        self.__running = False
-        self.__thread.join()
+            while True:
+                if len(data) == 0:
+                    break
+
+                self.server.sendall(data)
+
+                try:
+                    data = self.client.recv(self.chunk)
+                except timeout:
+                    pass
+        except OSError:
+            pass
+        except Exception:
+            pass
+        finally:
+            self.__running = False
+            self.__thread.join()
 
 
 class SockProxy():
@@ -85,7 +100,7 @@ class SockProxy():
     def chunk(self) -> int:
         return self.__chunk
 
-    def new_connection(self, client: socket, data: bytes):
+    def new_connection(self, client: socket, data: bytes) -> None:
         server: socket = create_connection(address=self.target)
         server.setsockopt(SOL_SOCKET, SO_RCVBUF, self.chunk)
         server.setsockopt(SOL_SOCKET, SO_SNDBUF, self.chunk)
@@ -94,23 +109,5 @@ class SockProxy():
         server.settimeout(self.timeout)
         client.settimeout(self.timeout)
 
-        response: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)  # noqa:E501
-
-        try:
-            response.start()
-            while True:
-                if len(data) == 0:
-                    break
-
-                server.sendall(data)
-
-                try:
-                    data = client.recv(self.chunk)
-                except timeout:
-                    pass
-        except OSError:
-            pass
-        except Exception:
-            pass
-        finally:
-            response.stop()
+        proxy: ResponseProxy = ResponseProxy(client, server, chunk=self.chunk)
+        proxy.start(data=data)
