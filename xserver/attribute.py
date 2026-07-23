@@ -6,6 +6,6 @@ __project_home__ = "https://github.com/bondbox/xser/"
 __project_desc__ = "Socket and HTTP Server"
 
 # package info
-__version__ = "0.6"
+__version__ = "0.7"
 __package_name__ = "xser"
 __package_desc__ = "Socket and HTTP Server"
