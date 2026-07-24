@@ -54,7 +54,7 @@ class ResponseProxy():
 
     def handler(self):
         try:
-            while self.running:
+            while True:
                 try:
                     data: bytes = self.server.recv(self.chunk)
                 except timeout:
@@ -70,6 +70,7 @@ class ResponseProxy():
         finally:
             self.close_socket(self.server, SHUT_RD)
             self.close_socket(self.client, SHUT_WR)
+            self.__running = False
 
     def start(self, initial_data: bytes = b"", stop_threshold: int = 0) -> bool:  # noqa:E501
         try:
@@ -101,7 +102,6 @@ class ResponseProxy():
         finally:
             self.shutdown_socket(self.client, SHUT_RD)
             self.shutdown_socket(self.server, SHUT_WR)
-            self.__running = False
             self.__thread.join()
 
         return not isinstance(self.__except, Exception)
