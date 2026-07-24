@@ -20,6 +20,7 @@ class ResponseProxy():
 
     def __init__(self, client: socket, server: socket, chunk: int):
         self.__thread: Thread = Thread(target=self.handler)
+        self.__except: Optional[Exception] = None
         self.__client: socket = client
         self.__server: socket = server
         self.__running: bool = False
@@ -64,13 +65,13 @@ class ResponseProxy():
 
                 self.client.sendall(data)
                 self.__sent_to_cli += cnt
-        except Exception:
-            pass
+        except Exception as ex:
+            self.__except = ex
         finally:
             self.close_socket(self.server, SHUT_RD)
             self.close_socket(self.client, SHUT_WR)
 
-    def start(self, initial_data: bytes = b"", stop_threshold: int = 0):
+    def start(self, initial_data: bytes = b"", stop_threshold: int = 0) -> bool:  # noqa:E501
         try:
             self.__running = True
             self.__thread.start()
@@ -93,15 +94,17 @@ class ResponseProxy():
 
                 self.server.sendall(data)
                 self.__sent_to_srv += cnt
-        except OSError:
-            pass
-        except Exception:
-            pass
+        except OSError as ex:
+            self.__except = ex
+        except Exception as ex:
+            self.__except = ex
         finally:
             self.shutdown_socket(self.client, SHUT_RD)
             self.shutdown_socket(self.server, SHUT_WR)
             self.__running = False
             self.__thread.join()
+
+        return not isinstance(self.__except, Exception)
 
     @classmethod
     def shutdown_socket(cls, sock: socket, how: int) -> bool:
