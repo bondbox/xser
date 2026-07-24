@@ -54,6 +54,28 @@ class TestResponseProxy(TestCase):
             self.assertEqual(self.proxy.total_received_from_client, 0)
             self.assertEqual(self.proxy.total_received_from_server, 4)
 
+    def test_shutdown_socket(self):
+        self.fake_client.fileno.side_effect = [1, 1]
+        self.fake_server.fileno.side_effect = [2, 2]
+        self.fake_client.shutdown.side_effect = [None, None]
+        self.fake_server.shutdown.side_effect = [OSError("test1"), OSError("test2")]  # noqa:E501
+        self.assertTrue(proxy.ResponseProxy.shutdown_socket(self.fake_client, proxy.SHUT_RD))  # noqa:E501
+        self.assertTrue(proxy.ResponseProxy.shutdown_socket(self.fake_client, proxy.SHUT_WR))  # noqa:E501
+        self.assertFalse(proxy.ResponseProxy.shutdown_socket(self.fake_server, proxy.SHUT_RD))  # noqa:E501
+        self.assertFalse(proxy.ResponseProxy.shutdown_socket(self.fake_server, proxy.SHUT_WR))  # noqa:E501
+
+    def test_close_socket(self):
+        self.fake_client.fileno.side_effect = [1, 1]
+        self.fake_server.fileno.side_effect = [2, 2]
+        self.fake_client.close.side_effect = [None, None]
+        self.fake_server.close.side_effect = [OSError("test1")]
+        self.fake_client.shutdown.side_effect = [None, OSError("test2")]
+        self.fake_server.shutdown.side_effect = [None, OSError("test3")]
+        self.assertTrue(proxy.ResponseProxy.close_socket(self.fake_client, proxy.SHUT_RD))  # noqa:E501
+        self.assertFalse(proxy.ResponseProxy.close_socket(self.fake_client, proxy.SHUT_WR))  # noqa:E501
+        self.assertFalse(proxy.ResponseProxy.close_socket(self.fake_server, proxy.SHUT_RD))  # noqa:E501
+        self.assertFalse(proxy.ResponseProxy.close_socket(self.fake_server, proxy.SHUT_WR))  # noqa:E501
+
 
 class TestSockProxy(TestCase):
 

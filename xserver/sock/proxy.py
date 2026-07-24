@@ -10,6 +10,7 @@ from socket import socket
 from socket import timeout
 from threading import Thread
 from typing import Tuple
+from typing import Optional
 
 from xkits_lib.unit import TimeUnit
 
@@ -66,10 +67,8 @@ class ResponseProxy():
         except Exception:
             pass
         finally:
-            if self.server.fileno() >= 0:
-                self.server.close()
-            if self.client.fileno() >= 0:
-                self.client.close()
+            self.close_socket(self.server, SHUT_RD)
+            self.close_socket(self.client, SHUT_WR)
 
     def start(self, initial_data: bytes = b"", stop_threshold: int = 0):
         try:
@@ -99,12 +98,30 @@ class ResponseProxy():
         except Exception:
             pass
         finally:
-            if self.client.fileno() >= 0:
-                self.client.shutdown(SHUT_RD)
-            if self.server.fileno() >= 0:
-                self.server.shutdown(SHUT_WR)
+            self.shutdown_socket(self.client, SHUT_RD)
+            self.shutdown_socket(self.server, SHUT_WR)
             self.__running = False
             self.__thread.join()
+
+    @classmethod
+    def shutdown_socket(cls, sock: socket, how: int) -> bool:
+        try:
+            if sock.fileno() >= 0:
+                sock.shutdown(how)
+            return True
+        except OSError:
+            return False
+
+    @classmethod
+    def close_socket(cls, sock: socket, how: Optional[int] = None) -> bool:
+        try:
+            if sock.fileno() >= 0:
+                if isinstance(how, int):
+                    sock.shutdown(how)
+                sock.close()
+            return True
+        except OSError:
+            return False
 
 
 class SockProxy():
