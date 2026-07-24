@@ -20,7 +20,6 @@ class ResponseProxy():
 
     def __init__(self, client: socket, server: socket, chunk: int):
         self.__thread: Thread = Thread(target=self.handler)
-        self.__except: Optional[Exception] = None
         self.__client: socket = client
         self.__server: socket = server
         self.__running: bool = False
@@ -53,11 +52,14 @@ class ResponseProxy():
         return self.__chunk
 
     def handler(self):
+        """server -> client"""
         try:
             while self.running:
                 try:
-                    data: bytes = self.server.recv(self.chunk)
+                    data = self.server.recv(self.chunk)
                 except timeout:
+                    if not self.running:
+                        break
                     continue
 
                 if (cnt := len(data)) == 0:
@@ -65,13 +67,17 @@ class ResponseProxy():
 
                 self.client.sendall(data)
                 self.__sent_to_cli += cnt
-        except Exception as ex:
-            self.__except = ex
+
+            self.server_drained.set()
+            self.client_drained.wait(timeout=5)
+        except Exception as e:
+            self.exception = e
         finally:
-            self.close_socket(self.server, SHUT_RD)
-            self.close_socket(self.client, SHUT_WR)
+            self.close_socket(self.server, SHUT_WR)  # 关闭写端，通知对端
+            self.close_socket(self.client, SHUT_RD)  # 关闭读端
 
     def start(self, initial_data: bytes = b"", stop_threshold: int = 0):
+        """client -> server"""
         try:
             self.__running = True
             self.__thread.start()
@@ -87,46 +93,62 @@ class ResponseProxy():
                 try:
                     data: bytes = self.client.recv(self.chunk)
                 except timeout:
+                    if not self.running:
+                        break
                     continue
 
                 if (cnt := len(data)) == 0:
+                    # client 关闭了连接
                     break
 
                 self.server.sendall(data)
                 self.__sent_to_srv += cnt
-        except OSError:
-            pass
-        except Exception:
-            pass
-        finally:
+
             self.shutdown_socket(self.client, SHUT_RD)
+            if not self.server_drained.wait(timeout=10):
+                # 超时处理，强制关闭
+                print("Warning: server drain timeout")
+
             self.shutdown_socket(self.server, SHUT_WR)
-
+            self.client_drained.set()
+        except Exception as e:
+            self.exception = e
+        finally:
             self.__running = False
-            self.__thread.join()
+            # 等待 handler 线程结束
+            if self.__thread and self.__thread.is_alive():
+                self.__thread.join(timeout=5)
 
-            if isinstance(self.__except, Exception):
-                raise self.__except
+            # 最终清理
+            self.close_socket(self.server)
+            self.close_socket(self.client)
+
+            # 检查异常
+            if self.exception:
+                raise self.exception
 
     @classmethod
-    def shutdown_socket(cls, sock: socket, how: int) -> bool:
+    def shutdown_socket(cls, sock: socket, how: int):
         try:
             if sock.fileno() >= 0:
                 sock.shutdown(how)
-            return True
-        except OSError:
-            return False
+        except (OSError, ValueError):
+            pass
 
     @classmethod
-    def close_socket(cls, sock: socket, how: Optional[int] = None) -> bool:
+    def close_socket(cls, sock: socket, how: Optional[int] = None):
+        try:
+            if isinstance(how, int):
+                if sock.fileno() >= 0:
+                    sock.shutdown(how)
+        except (OSError, ValueError):
+            pass
+
         try:
             if sock.fileno() >= 0:
-                if isinstance(how, int):
-                    sock.shutdown(how)
                 sock.close()
-            return True
-        except OSError:
-            return False
+        except (OSError, ValueError):
+            pass
 
 
 class SockProxy():
